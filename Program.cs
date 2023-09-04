@@ -26,13 +26,14 @@ namespace StringID_fetcher
             TextWriter strings_writer = new StreamWriter(output_strings_dir);
             TextWriter IDs_writer = new StreamWriter(output_stringIDs_dir);
 
+            int file_index = 0;
+            int total_Files = mod.files.Length;
             // go through each directory
             foreach (var dir in mod.file_groups){
                 if (dir.Key == "ÿÿÿÿ") continue; // these are the non-tag files
 
-                for(int file_index = 0; file_index < dir.Value.Count; file_index++){
-                    var file = dir.Value[file_index];
-
+                foreach(var file in dir.Value){
+                    file_index++;
                     if (file.is_resource) continue;
 
                     // get the resources from the module
@@ -40,7 +41,7 @@ namespace StringID_fetcher
                     try{ // idk why we have a try catch here
                         List<byte[]> resulting_resources = mod.get_tag_resource_list(file.source_file_header_index);
                         foreach (byte[] resource in resulting_resources) {
-                            bool is_standalone_resource = resource[0..4].SequenceEqual(new byte[] { 0x75, 0x63, 0x73, 0x68 }); // test for those 4 chars at the top of the file
+                            bool is_standalone_resource = resource[0..4].SequenceEqual(tag_magic); // test for those 4 chars at the top of the file
                             resource_list.Add(new KeyValuePair<byte[], bool>(resource, is_standalone_resource));
                     }}catch (Exception ex){
                         Console.WriteLine(file.name + " failed to read resources: " + ex.Message);
@@ -77,23 +78,26 @@ namespace StringID_fetcher
 
 
                     foreach (var v in tag_thing.found_strings)
-                        strings_writer.WriteLine(v);
+                        strings_writer.WriteLine(v.Key);
                     foreach (var v in tag_thing.found_stringIDs)
-                        IDs_writer.WriteLine(v.ToString("X8"));
+                        IDs_writer.WriteLine(v.Key.ToString("X8"));
 
-                    Console.WriteLine(file_index + "/" + dir.Value.Count);
+                    Console.WriteLine(file_index + "/" + total_Files);
                 }
             }
 
         }
-        class tag_crawler
-        {
-            tag tag;
-            public List<string> found_strings = new();
-            public List<uint> found_stringIDs = new();
+        class tag_crawler{
+            tag tag; // we'll add some code to 
+            public Dictionary<string, bool> found_strings = new();
+            public Dictionary<uint, bool> found_stringIDs = new();
             public tag_crawler(tag _tag){
                 tag = _tag;}
-
+            private string strip_string(string input){
+                int index = input.IndexOf('\0');
+                if (index < 0) return input;
+                return input.Substring(0, index);
+            }
             public void process_structure(tag.thing _struct, string GUID, int struct_offset){
                 // get the xml node that holds the data for this structure
                 XmlNode? current_structure = tag.reference_root.SelectSingleNode("_" + GUID);
@@ -104,19 +108,25 @@ namespace StringID_fetcher
                     int offset = Convert.ToInt32(param.Attributes["Offset"].Value, 16);
                     offset += struct_offset; // this is for structs & array structs, so we can offset to the correct position, even though we're reading a different group of params
 
-                    switch (param.Name){
+                    switch (param.Name) {
                         // /////////////////////////////////// //
                         // the types we're going to dump from //
                         // ///////////////////////////////// //
-                        case "_0": // _field_string
-                            found_strings.Add(Encoding.UTF8.GetString(_struct.tag_data, offset, 32));
-                            continue;  
-                        case "_1": // _field_long_string
-                            found_strings.Add(Encoding.UTF8.GetString(_struct.tag_data, offset, 256));
-                            continue; 
-                        case "_2": // _field_string_id
-                            found_stringIDs.Add(BitConverter.ToUInt32(_struct.tag_data[offset..(offset + 4)])); 
-                            continue;
+                        case "_0": { // _field_string
+                                string result = strip_string(Encoding.UTF8.GetString(_struct.tag_data, offset, 32));
+                                if (!found_strings.ContainsKey(result))
+                                    found_strings.Add(result, true);
+                            } continue;
+                        case "_1": { // _field_long_string
+                                string result = strip_string(Encoding.UTF8.GetString(_struct.tag_data, offset, 256));
+                                if (!found_strings.ContainsKey(result))
+                                    found_strings.Add(result, true);
+                            } continue;
+                        case "_2":{ // _field_string_id
+                                uint stringID = BitConverter.ToUInt32(_struct.tag_data[offset..(offset + 4)]);
+                                if (!found_stringIDs.ContainsKey(stringID))
+                                    found_stringIDs.Add(stringID, true);
+                            } continue;
                         // ///////////////////////// //
                         // tagdata navigation types //
                         // /////////////////////// //
