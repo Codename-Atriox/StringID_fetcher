@@ -5,6 +5,10 @@ VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StringID_fetcher", "StringID_fetcher.csproj", "{7B7538DF-1FBE-45F1-AD26-D0D39DDC32B5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OodleSharp", "..\..\OddleSharp\OodleSharp\OodleSharp.csproj", "{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TagFramework", "..\..\TagFramework\TagFramework.csproj", "{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,22 @@ Global
 		{7B7538DF-1FBE-45F1-AD26-D0D39DDC32B5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7B7538DF-1FBE-45F1-AD26-D0D39DDC32B5}.Release|x64.ActiveCfg = Release|Any CPU
 		{7B7538DF-1FBE-45F1-AD26-D0D39DDC32B5}.Release|x64.Build.0 = Release|Any CPU
+		{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}.Debug|x64.ActiveCfg = Debug|x64
+		{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}.Debug|x64.Build.0 = Debug|x64
+		{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}.Release|x64.ActiveCfg = Release|x64
+		{38918299-B8E1-4F96-88F1-DB89A9C3BE5A}.Release|x64.Build.0 = Release|x64
+		{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}.Debug|x64.Build.0 = Debug|Any CPU
+		{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}.Release|x64.ActiveCfg = Release|Any CPU
+		{2E8CEE9E-1893-4CC9-BC15-26AD214F94DF}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
