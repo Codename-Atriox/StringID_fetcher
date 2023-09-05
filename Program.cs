@@ -4,6 +4,7 @@ using static Infinite_module_test.module_structs;
 using System.Xml;
 using System.Xml.Linq;
 using System.Text;
+using System.IO;
 
 namespace StringID_fetcher
 {
@@ -13,14 +14,13 @@ namespace StringID_fetcher
         {
             Console.WriteLine("attempting to open target module!");
 
-
-            string target_file = "D:\\Programs\\Steam\\steamapps\\common\\Halo Infinite\\deploy\\any\\globals\\forge\\forge_objects-rtx-new.module";
+            string target_folder = "D:\\Programs\\Steam\\steamapps\\common\\Halo Infinite\\deploy";
+            //string  = "D:\\Programs\\Steam\\steamapps\\common\\Halo Infinite\\deploy\\any\\globals\\forge\\forge_objects-rtx-new.module";
             string plugins_path = "C:\\Users\\Joe bingle\\Downloads\\plugins";
 
             string output_stringIDs_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\string_puller\\IDs.txt";
             string output_strings_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\string_puller\\strings.txt";
 
-            module mod = new module(target_file);
 
 
 
@@ -29,66 +29,83 @@ namespace StringID_fetcher
             Dictionary<string, bool> found_strings = new();
             Dictionary<uint, bool> found_stringIDs = new();
 
-            int file_index = 0;
-            int total_Files = mod.files.Length;
-            // go through each directory
-            foreach (var dir in mod.file_groups){
-                if (dir.Key == "ÿÿÿÿ") continue; // these are the non-tag files
+            var module_files = System.IO.Directory.GetFiles(target_folder, "*", SearchOption.AllDirectories);
 
-                foreach(var file in dir.Value){
-                    file_index++;
-                    if (file.is_resource) continue;
+            for (int i = 0; i < module_files.Length; i++){
+                string target_file = module_files[i];
+                Console.WriteLine(i + "/" + module_files.Length + ": " + target_file);
+                if (!target_file.EndsWith(".module")){
+                    Console.WriteLine("not a module file!");
+                    continue;}
+                try{module mod = new module(target_file);
+                    int file_index = 0;
+                    int total_Files = mod.files.Length;
+                    // go through each directory
+                    foreach (var dir in mod.file_groups){
+                        if (dir.Key == "ÿÿÿÿ") continue; // these are the non-tag files
 
-                    // get the resources from the module
-                    List<KeyValuePair<byte[], bool>> resource_list = new();
-                    if (dir.Key != "hsc_") try{ // hsc_ tags are so annoying!!! thanks a lot johnathon halo (the resources for these are intentionally cleared by 343, causing oodle issues)
-                        List<byte[]> resulting_resources = mod.get_tag_resource_list(file.source_file_header_index);
-                        foreach (byte[] resource in resulting_resources) {
-                            bool is_standalone_resource = resource[0..4].SequenceEqual(tag_magic); // test for those 4 chars at the top of the file
-                            resource_list.Add(new KeyValuePair<byte[], bool>(resource, is_standalone_resource));
-                    }}catch (Exception ex){
-                        Console.WriteLine(file.name + " (" + dir.Key + ") failed to read resources: " + ex.Message);
-                        continue;
-                    }
+                        foreach(var file in dir.Value){
+                            file_index++;
+                            if (file.is_resource) continue;
+
+                            // get the resources from the module
+                            List<KeyValuePair<byte[], bool>> resource_list = new();
+                            if (dir.Key != "hsc_") try{ // hsc_ tags are so annoying!!! thanks a lot johnathon halo (the resources for these are intentionally cleared by 343, causing oodle issues)
+                                List<byte[]> resulting_resources = mod.get_tag_resource_list(file.source_file_header_index);
+                                foreach (byte[] resource in resulting_resources) {
+                                    bool is_standalone_resource = false;
+                                    if (resource.Length > 4)
+                                        is_standalone_resource = resource[0..4].SequenceEqual(tag_magic); // test for those 4 chars at the top of the file
+                                    resource_list.Add(new KeyValuePair<byte[], bool>(resource, is_standalone_resource));
+                            }}catch (Exception ex){
+                                Console.WriteLine(file.name + " (" + dir.Key + ") failed to read resources: " + ex.Message);
+                                continue;
+                            }
                     
                     
-                    // for debug purposes // make sure all resources are of the same type // NOTE: resource state should be an int, not a bool!!!
-                    if (resource_list.Count > 0){
-                        bool inital = resource_list[0].Value;
-                        foreach (var resource in resource_list)
-                            if (resource.Value != inital)
-                                Console.WriteLine(file.name + " has resources with mis-matching chunked/non-chunked status!!");
+                            // for debug purposes // make sure all resources are of the same type // NOTE: resource state should be an int, not a bool!!!
+                            if (resource_list.Count > 0){
+                                bool inital = resource_list[0].Value;
+                                foreach (var resource in resource_list)
+                                    if (resource.Value != inital)
+                                        Console.WriteLine(file.name + " has resources with mis-matching chunked/non-chunked status!!");
+                            }
+
+                            // load & process the tag
+                            tag test = new tag(plugins_path, resource_list);
+                            try{byte[] tagbytes = mod.get_tag_bytes(file.source_file_header_index);
+                                if (!test.Load_tag_file(tagbytes)){
+                                    Console.WriteLine(file.name + " was not able to be loaded as a tag");
+                                    continue;
+                            }} catch (Exception ex){ 
+                                Console.WriteLine(file.name + " (" + dir.Key + ") returned an error: " + ex.Message);
+                                continue;
+                            }
+
+                            // now do whatever we want with the tag
+                            // which is, just do a recursive search across all tagdata
+                            if (test.root == null){
+                                Console.WriteLine(file.name + " returned NO formatted tag data");
+                                continue;}
+                            if (test.root.blocks.Count != 1) throw new Exception("Debug moment!!! there should only ever be a single root block");
+                            tag_crawler tag_thing = new(test);
+                            tag_thing.process_structure(test.root.blocks[0], test.root.GUID, 0);
+
+
+                            foreach (var v in tag_thing.found_strings)
+                                found_strings[v.Key] = v.Value;
+                            foreach (var v in tag_thing.found_stringIDs)
+                                found_stringIDs[v.Key] = v.Value;
+
+                            if (file_index % 1000 == 0) // only print every 1000, to keep it running smooth
+                                Console.WriteLine(file_index + "/" + total_Files);
+                        }
                     }
 
-                    // load & process the tag
-                    tag test = new tag(plugins_path, resource_list);
-                    try{byte[] tagbytes = mod.get_tag_bytes(file.source_file_header_index);
-                        if (!test.Load_tag_file(tagbytes)){
-                            Console.WriteLine(file.name + " was not able to be loaded as a tag");
-                            continue;
-                    }} catch (Exception ex){ 
-                        Console.WriteLine(file.name + " (" + dir.Key + ") returned an error: " + ex.Message);
-                        continue;
-                    }
 
-                    // now do whatever we want with the tag
-                    // which is, just do a recursive search across all tagdata
-                    if (test.root == null){
-                        Console.WriteLine(file.name + " returned NO formatted tag data");
-                        continue;}
-                    if (test.root.blocks.Count != 1) throw new Exception("Debug moment!!! there should only ever be a single root block");
-                    tag_crawler tag_thing = new(test);
-                    tag_thing.process_structure(test.root.blocks[0], test.root.GUID, 0);
+                }catch (Exception ex){Console.WriteLine(target_file + " failed: " + ex.Message);}
 
 
-                    foreach (var v in tag_thing.found_strings)
-                        found_strings[v.Key] = v.Value;
-                    foreach (var v in tag_thing.found_stringIDs)
-                        found_stringIDs[v.Key] = v.Value;
-
-                    if (file_index % 1000 == 0) // only print every 1000, to keep it running smooth
-                        Console.WriteLine(file_index + "/" + total_Files);
-                }
             }
 
             TextWriter strings_writer = new StreamWriter(output_strings_dir);
@@ -96,6 +113,11 @@ namespace StringID_fetcher
 
             foreach (var v in found_strings) strings_writer.WriteLine(v.Key);
             foreach (var v in found_stringIDs) IDs_writer.WriteLine(v.Key.ToString("X8"));
+
+
+
+
+
 
         }
         class tag_crawler{
@@ -169,6 +191,8 @@ namespace StringID_fetcher
                                 if (next_struct == null) continue; // ok so thats how we handle null resources
                                 string next_guid = next_struct.GUID;
 
+                                if (next_struct.blocks.Count == 0)
+                                    continue; // im prettu sure this is for chunked resources maybe?
                                 if (next_struct.blocks.Count != 1)
                                     throw new Exception("Debug moment!!! resource references should only have a single block");
                                 process_structure(next_struct.blocks[0], next_guid, 0);
