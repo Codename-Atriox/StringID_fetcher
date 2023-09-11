@@ -25,7 +25,6 @@ namespace StringID_fetcher
 
 
 
-
             Dictionary<string, bool> found_strings = new();
             Dictionary<uint, bool> found_stringIDs = new();
 
@@ -120,10 +119,12 @@ namespace StringID_fetcher
 
 
         }
+        static ulong bytes_thing_count;
         class tag_crawler{
             tag tag; // we'll add some code to 
             public Dictionary<string, bool> found_strings = new();
             public Dictionary<uint, bool> found_stringIDs = new();
+            string output_bytecodes_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\string_puller\\bytecodes\\";
             public tag_crawler(tag _tag){
                 tag = _tag;}
             private string strip_string(string input){
@@ -159,6 +160,15 @@ namespace StringID_fetcher
                                 uint stringID = BitConverter.ToUInt32(_struct.tag_data[offset..(offset + 4)]);
                                 if (!found_stringIDs.ContainsKey(stringID))
                                     found_stringIDs.Add(stringID, true);
+                            } continue;
+                        case "_42":{ // data array thing
+                                // check if this is the target type
+                                if (GUID == "D0FF4560788326B0C497F3C2A248E93A"){
+                                    if (!_struct.tag_resource_refs.ContainsKey((ulong)offset)) continue;
+
+                                    File.WriteAllBytes(output_bytecodes_dir + bytes_thing_count.ToString() + ".file", _struct.tag_resource_refs[(ulong)offset]);
+                                    bytes_thing_count++;
+                                }
                             } continue;
                         // ///////////////////////// //
                         // tagdata navigation types //
