@@ -38,7 +38,11 @@ namespace StringID_fetcher
                     continue;}
                 try{module mod = new module(target_file);
                     int file_index = 0;
-                    int total_Files = mod.files.Length;
+                    int total_Files = 0;
+                    foreach (var dir in mod.file_groups)
+                        foreach (var file in dir.Value)
+                            total_Files++;
+
                     // go through each directory
                     foreach (var dir in mod.file_groups){
                         if (dir.Key == "ÿÿÿÿ") continue; // these are the non-tag files
@@ -50,7 +54,7 @@ namespace StringID_fetcher
                             // get the resources from the module
                             List<KeyValuePair<byte[], bool>> resource_list = new();
                             if (dir.Key != "hsc_") try{ // hsc_ tags are so annoying!!! thanks a lot johnathon halo (the resources for these are intentionally cleared by 343, causing oodle issues)
-                                List<byte[]> resulting_resources = mod.get_tag_resource_list(file.source_file_header_index);
+                                List<byte[]> resulting_resources = mod.get_tag_resource_list(file.file);
                                 foreach (byte[] resource in resulting_resources) {
                                     bool is_standalone_resource = false;
                                     if (resource.Length > 4)
@@ -71,15 +75,18 @@ namespace StringID_fetcher
                             }
 
                             // load & process the tag
-                            tag test = new tag(plugins_path, resource_list);
-                            try{byte[] tagbytes = mod.get_tag_bytes(file.source_file_header_index);
+                            tag test = new tag(resource_list);
+                            try{byte[] tagbytes = mod.get_module_file_bytes(file.file);
                                 if (!test.Load_tag_file(tagbytes)){
                                     Console.WriteLine(file.name + " was not able to be loaded as a tag");
+                                    mod.flush_module_file(file.file);
                                     continue;
                             }} catch (Exception ex){ 
                                 Console.WriteLine(file.name + " (" + dir.Key + ") returned an error: " + ex.Message);
+                                mod.flush_module_file(file.file);
                                 continue;
                             }
+                            mod.flush_module_file(file.file); // have to clear the allocated mem so it doesn't build up
 
                             // now do whatever we want with the tag
                             // which is, just do a recursive search across all tagdata
