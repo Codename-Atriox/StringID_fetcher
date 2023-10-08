@@ -18,8 +18,8 @@ namespace StringID_fetcher
             //string  = "D:\\Programs\\Steam\\steamapps\\common\\Halo Infinite\\deploy\\any\\globals\\forge\\forge_objects-rtx-new.module";
             string plugins_path = "C:\\Users\\Joe bingle\\Downloads\\plugins";
 
-            string output_stringIDs_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\string_puller\\IDs.txt";
-            string output_strings_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\string_puller\\strings.txt";
+            string output_stringIDs_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\IDs.txt";
+            string output_strings_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\strings.txt";
 
 
 
@@ -131,7 +131,7 @@ namespace StringID_fetcher
             tag tag; // we'll add some code to 
             public Dictionary<string, bool> found_strings = new();
             public Dictionary<uint, bool> found_stringIDs = new();
-            string output_bytecodes_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\string_puller\\bytecodes\\";
+            string output_bytecodes_dir = "C:\\Users\\Joe bingle\\Downloads\\HASHING\\bytecodes\\";
             public tag_crawler(tag _tag){
                 tag = _tag;}
             private string strip_string(string input){
@@ -169,7 +169,7 @@ namespace StringID_fetcher
                                     found_stringIDs.Add(stringID, true);
                             } continue;
                         case "_42":{ // data array thing
-                                // check if this is the target type
+                                // check if this is the target type (we're only looking for shader bytecodes)
                                 if (GUID == "D0FF4560788326B0C497F3C2A248E93A"){
                                     if (!_struct.tag_resource_refs.ContainsKey((ulong)offset)) continue;
 
