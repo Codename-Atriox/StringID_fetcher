@@ -96,7 +96,11 @@ namespace StringID_fetcher
                             if (test.root.blocks.Count != 1) throw new Exception("Debug moment!!! there should only ever be a single root block");
                             tag_crawler tag_thing = new(test);
                             tag_thing.process_structure(test.root.blocks[0], test.root.GUID, 0);
-
+                            // we also want to get the unmarked header data too, as that might provide some useful stuff (especially the shader bytecode tags?)
+                            if (test.unmarked_header_data.Length > 0 && test.root.GUID == "27A64A516BD417082830A68884411692"){
+                                File.WriteAllBytes("C:\\Users\\Joe bingle\\Downloads\\HASHING\\unmarked\\" + unmarked_count.ToString() + ".file", test.unmarked_header_data);
+                                unmarked_count++;
+                            }
 
                             foreach (var v in tag_thing.found_strings)
                                 found_strings[v.Key] = v.Value;
@@ -127,6 +131,7 @@ namespace StringID_fetcher
 
         }
         static ulong bytes_thing_count;
+        static ulong unmarked_count = 0;
         class tag_crawler{
             tag tag; // we'll add some code to 
             public Dictionary<string, bool> found_strings = new();
